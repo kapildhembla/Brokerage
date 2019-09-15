@@ -1,0 +1,12 @@
+Install Solidity Compiler
+npm install solc@0.5.3
+
+
+Compile the contract
+node_modules/.bin/solcjs --bin --abi Test.sol
+
+Will generates two files
+ Test_sol_SimpleStorage.abi
+ Test_sol_SimpleStorage.bin
+
+
