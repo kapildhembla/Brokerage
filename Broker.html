@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang=”en”>
+<html lang=â€enâ€>
 <head>
- <meta charset=”UTF-8">
- <meta name=”viewport” content=”width=device-width, initial-scale=1.0">
- <meta http-equiv=”X-UA-Compatible” content=”ie=edge”>
+ <meta charset=â€UTF-8">
+ <meta name=â€viewportâ€ content=â€width=device-width, initial-scale=1.0">
+ <meta http-equiv=â€X-UA-Compatibleâ€ content=â€ie=edgeâ€>
  <title>Document</title>
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -325,7 +325,7 @@ function RegisterBroker()
 {
 var brokerCode= $("#txtBrokerCode").val();
 var brokerName= $("#txtBrokerName").val();
- deployedContract.methods.registerBroker(brokerCode,brokerName).send({from: allAccounts[0], gas:3000000}).then((f) => {
+ deployedContract.methods.registerBroker(brokerCode,brokerName).send({from: allAccounts[1], gas:3000000}).then((f) => {
  alert("Broker has been Registered");
  });
 
@@ -335,7 +335,7 @@ function RegisterClient()
 {
 var clientCode= $("#txtClientCode").val();
 var clientName= $("#txtClientName").val();
- deployedContract.methods.registerClient(clientCode,clientName).send({from: allAccounts[0], gas:3000000}).then((f) => {
+ deployedContract.methods.registerClient(clientCode,clientName).send({from: allAccounts[2], gas:3000000}).then((f) => {
  alert("Client has been Registered");
  });
 
@@ -353,7 +353,7 @@ var tradeDate=$("#txtTradeDate").val();
 var currency=$("#txtCurrency").val();
 var markitWireId=$("#txtMarkitWireId").val();
 
-deployedContract.methods.submitTrade(markitWireId,tradeDate,currency,settlementDate,isClearingEligble,clientCode,brokerCode,unit).send({from: 	allAccounts[0], gas:3000000}).then((f) => {
+deployedContract.methods.submitTrade(markitWireId,tradeDate,currency,settlementDate,isClearingEligble,clientCode,brokerCode,unit).send({from: 	allAccounts[2], gas:3000000}).then((f) => {
  alert("Trade Submitted");
 $("#txtClientCode2").val('');
 $("#txtBrokerCode2").val('');
@@ -371,7 +371,7 @@ $("#txtMarkitWireId").val('');
 
 function GetBrokerTrades()
 {
-deployedContract.methods.getBrokerTrades().call().then((res) => {
+deployedContract.methods.getBrokerTrades().call({from: 	allAccounts[1]}).then((res) => {
 $("#txtClientCode2").val(res[0].trade.clientCode);
 $("#txtBrokerCode2").val(res[0].trade.brokerCode);
 ($('#txtIsClearingEligble').prop('checked',res[0].trade.settlementDate)) 
