@@ -17,7 +17,7 @@
 
 <script src="./node_modules/dist/web3.min.js"></script>
 <script>
-var contractAddress='0x80D30B664646C94B8010a8b309C075CAB88ae866';
+var contractAddress='0x63c04734E9b0ED8887784D0dE90aD0C4d04d5707';
 var deployedContract;
 var contract;
 var event;
@@ -704,7 +704,8 @@ deployedContract.events.NewTradeSubmit({},{fromBlock:0,toBlock:'latest'}, functi
 .on('data', function(event){
  if(event.returnValues.trade.trade.brokerCode==brokerCode||isClient)
 {
-    var newRowContent="<tr><th scope='row'>1</th><td>"+event.returnValues.trade.trade.brokerCode+"</td><td>"+event.returnValues.trade.trade.clientCode+"</td><td>"+event.returnValues.trade.trade.brokerageAmount+"</td></tr>";
+    var newRowContent="<tr><td>"+event.returnValues.trade.trade.brokerCode+"</td><td>"+event.returnValues.trade.trade.clientCode			+"</td><td>"+event.returnValues.trade.trade.currency									+"</td><td>"+event.returnValues.trade.trade.brokerageAmount+"</td><td>"+event.returnValues.trade.status+"</td><td><button class='btn 			btn-primary'>Confirm</button>&nbsp;<button class='btn btn-primary'>Dispute</button></td></tr>";
+
 	$("#notificationTable tbody").append(newRowContent);
 }
 });
@@ -769,7 +770,7 @@ var markitWireId=$("#txtMarkitWireId").val();
 deployedContract.methods.submitTrade(markitWireId,tradeDate,currency,settlementDate,isClearingEligble,clientCode,brokerCode,unit).send({from: 	 web3.eth.defaultAccount, gas:3000000}).then((f) => {
  deployedContract.events.NewTradeSubmit({},{fromBlock:0,toBlock:'latest'}, function(error, event){ console.log(event); })
 .on('data', function(event){
-	var newRowContent='<tr><td>"+event.returnValues.trade.trade.brokerCode+"</td>"+event.returnValues.trade.trade.clientCode	+"<td>"+event.returnValues.trade.trade.brokerageAmount+"</td></tr>'
+	var newRowContent='<tr><td>"+event.returnValues.trade.trade.brokerCode+"</td>"+event.returnValues.trade.trade.clientCode		+"<td>"+event.returnValues.trade.trade.brokerageAmount+"</td></tr>'
 	$("#notificaitonTable tbody").append(newRowContent);
  
 });
@@ -946,10 +947,12 @@ $("#broker").hide();
 		<table id="notificationTable" class="table table-dark">
 			<thead>
 			  <tr>
-				<th scope="col">#</th>
 				<th scope="col">Broker Code</th>
 				<th scope="col">Client Code</th>
-				<th scope="col">Brokerage</th>
+				<th scope="col">Currency</th>
+				<th scope="col">Brokerage Amount</th>
+				<th scope="col">Status</th>
+				<th scope="col">Action</th>
 			  </tr>
 			</thead>
 			<tbody id="notificationBody">
