@@ -54,7 +54,7 @@ contract Brokerage {
     }
     
     mapping(string => User) brokerMapping; 
-    mapping(address => User) brokerAddressMapping;
+    mapping(address => User) public brokerAddressMapping;
     mapping(address => User) customerMapping;
     mapping(string => BrokerageTrade) tradesToSettle;
     //mapping (address => Trade[]) brokerTrades;
