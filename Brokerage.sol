@@ -63,23 +63,32 @@ contract Brokerage {
     
     mapping(string => BrokerageDispute[]) disputes;
     
+    
+    //events
+    event NewBroker(address broker);
+    event NewClient(address client);
+    event NewTradeSubmit(BrokerageTrade trade );
+    event DisputeOccured(BrokerageTrade trade, BrokerageDispute dispute);
+    event BrokerageSettled(BrokerageTrade trade);
+    
+    
     modifier onlyBroker() {
         require(isBroker(),"Only broker is allowed to perform operation.");
         _;
     }
     
-    modifier onlyCustomer() {
-        require(isCustomer(),"Only client is allowed to perform operation.");
+    modifier onlyClient() {
+        require(isClient(),"Only client is allowed to perform operation.");
         _;
     }
 
     
     /**
-     * @return true if `msg.sender` is custoemr.
+     * @return true if `msg.sender` is client.
      */
-    function isCustomer() public view returns (bool) {
-        User memory customer = customerMapping[msg.sender];
-        return customer.isEnabled;
+    function isClient() public view returns (bool) {
+        User memory client = customerMapping[msg.sender];
+        return client.isEnabled;
     }
     
     /**
@@ -96,20 +105,22 @@ contract Brokerage {
     }
     
     function registerBroker(string memory _brokerCode, string memory _brokerName) public {
-       // require (msg.sender != owner, "Owner can't be broker");
-       // require (brokerMapping[_brokerCode].isEnabled, "Broker already registered");
+        require (msg.sender != owner, "Owner can't be broker");
+        require (!isBroker(), "Broker already registered");
         User memory broker = User(msg.sender, UserType.Broker,_brokerName, _brokerCode, true);
         brokerMapping[_brokerCode] = broker;
         brokerAddressMapping[msg.sender] = broker;
+        emit NewBroker(msg.sender);
     }
     
      function registerClient(string memory _clientCode, string memory _clientName) public {
-        //require (customerMapping[msg.sender].isEnabled, "Client already registered");
+        require (!isClient(), "Client already registered");
         User memory client = User(msg.sender, UserType.Client,_clientName, _clientCode, true);
         customerMapping[msg.sender] = client;
+        emit NewClient(msg.sender);
     }
     
-    function submitTrade(string memory _markitWireId, string memory _tradeDate, string memory _currency, string memory _settlementDate, bool  _isClearingEligible, string memory _clientCode,string memory _brokerCode, uint _brokerage) public onlyCustomer{
+    function submitTrade(string memory _markitWireId, string memory _tradeDate, string memory _currency, string memory _settlementDate, bool  _isClearingEligible, string memory _clientCode,string memory _brokerCode, uint _brokerage) public onlyClient{
         require(brokerMapping[_brokerCode].isEnabled,"Unknown broker");
         Trade memory trade = Trade(_markitWireId, _tradeDate, _currency, _settlementDate, _isClearingEligible, _clientCode, _brokerCode, _brokerage);
         BrokerageTrade memory brokerageTrade = BrokerageTrade(trade, false, "",msg.sender, brokerMapping[_brokerCode].accountId, SettlementStatus.UnSettled);
@@ -121,14 +132,9 @@ contract Brokerage {
         
         
         //emit notification to broker
+        emit NewTradeSubmit(brokerageTrade);
     }
-    
-    function getBrokerTrades() view public onlyBroker returns (BrokerageTrade[] memory _brokerageTrades) {
-        require(brokerAddressMapping[msg.sender].isEnabled, "Not a valid broker");
-        require(brokerageTrades[msg.sender].length > 0, "No trades available");
-        
-        _brokerageTrades = brokerageTrades[msg.sender];
-    }
+   
     
     function confirmBrokerageAmount (string memory _tradeId) public onlyBroker{
         BrokerageTrade storage brokerageTrade = brokerageTrades1[msg.sender][_tradeId];
@@ -136,6 +142,8 @@ contract Brokerage {
         brokerageTrade.status = SettlementStatus.Settled;
         
         //emit event to customer that broker has settled trade
+        
+        emit BrokerageSettled(brokerageTrade);
     }
     
     function disputeBrokerage(string memory _tradeId, uint _amount, string memory _comments ) public {
@@ -151,5 +159,24 @@ contract Brokerage {
         }
         
         //emit event to customer that broker has not settled trade
+        emit DisputeOccured(tradesToSettle[_tradeId], brokerageDispute);
+    }
+    
+    function getUserRole() view public returns (string memory _role) {
+        if(isBroker())
+            _role = "Broker";
+        else if(isClient())
+            _role = "Client";
+        else
+            _role = "NONE";
+            
+        return _role;
+    }
+    
+     function getBrokerTrades() view public onlyBroker returns (BrokerageTrade[] memory _brokerageTrades) {
+        require(brokerAddressMapping[msg.sender].isEnabled, "Not a valid broker");
+        require(brokerageTrades[msg.sender].length > 0, "No trades available");
+        
+        _brokerageTrades = brokerageTrades[msg.sender];
     }
 }

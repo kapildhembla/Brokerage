@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html lang=”en”>
+<head>
+ <meta charset=”UTF-8">
+ <meta name=”viewport” content=”width=device-width, initial-scale=1.0">
+ <meta http-equiv=”X-UA-Compatible” content=”ie=edge”>
+ <title>Document</title>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery.ui.base.css">
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery.ui.theme.css">
+
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+<script src="./node_modules/dist/web3.min.js"></script>
+<script>
+window.addEventListener('load', async () => {
+    // Modern dapp browsers...
+    if (window.ethereum) {
+        window.web3 = new Web3(ethereum);
+        try {
+         
+            await ethereum.enable();
+           console.log("Modern Ethereum browser detected");
+        } catch (error) {
+           
+        }
+    }
+   
+    else if (window.web3) {
+        window.web3 = new Web3(web3.currentProvider);
+      console.log("Modern Non-Ethereum browser detected");
+    }
+   
+    else {
+        console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+    }
+});
+</script>
+
+</head>
+<body>
+
+
+<div class="container">
+<section class="jumbotron text-center">
+<h1 class="jumbotron-heading">BROKERAGE</h1>
+</section>
+<br/>
+<div class="row">
+<div class="col-md-4"></div>
+<div class="col-md-2">
+ <button onClick="EnableBroker()" class="btn btn-primary">RegisterAsBroker</button>
+</div>
+<div class="col-md-2">
+ <button onClick="EnableClient()" class="btn btn-primary">RegisterAsClient</button>
+</div>
+<div class="col-md-4"></div>
+</div>
+</div>
+
+</body>
+</html>

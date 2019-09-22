@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.17.1",
     "solc": "^0.5.3",
     "web3-min-js": "^1.0.0"
   }

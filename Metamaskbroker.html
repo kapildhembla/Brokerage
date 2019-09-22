@@ -1,0 +1,967 @@
+﻿<!DOCTYPE html>
+<html lang=”en”>
+<head>
+ <meta charset=”UTF-8">
+ <meta name=”viewport” content=”width=device-width, initial-scale=1.0">
+ <meta http-equiv=”X-UA-Compatible” content=”ie=edge”>
+ <title>Document</title>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery.ui.base.css">
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery.ui.theme.css">
+
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+<script src="./node_modules/dist/web3.min.js"></script>
+<script>
+var contractAddress='0x80D30B664646C94B8010a8b309C075CAB88ae866';
+var deployedContract;
+var contract;
+var event;
+const abi=[
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_tradeId",
+				"type": "string"
+			}
+		],
+		"name": "confirmBrokerageAmount",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_tradeId",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_comments",
+				"type": "string"
+			}
+		],
+		"name": "disputeBrokerage",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_brokerCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_brokerName",
+				"type": "string"
+			}
+		],
+		"name": "registerBroker",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_clientCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_clientName",
+				"type": "string"
+			}
+		],
+		"name": "registerClient",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_markitWireId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_tradeDate",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_currency",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_settlementDate",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "_isClearingEligible",
+				"type": "bool"
+			},
+			{
+				"internalType": "string",
+				"name": "_clientCode",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_brokerCode",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_brokerage",
+				"type": "uint256"
+			}
+		],
+		"name": "submitTrade",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "broker",
+				"type": "address"
+			}
+		],
+		"name": "NewBroker",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "client",
+				"type": "address"
+			}
+		],
+		"name": "NewClient",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"components": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "markitWireId",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "tradeDate",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "currency",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "settlementDate",
+								"type": "string"
+							},
+							{
+								"internalType": "bool",
+								"name": "clearingEligible",
+								"type": "bool"
+							},
+							{
+								"internalType": "string",
+								"name": "clientCode",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "brokerCode",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "brokerageAmount",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct Brokerage.Trade",
+						"name": "trade",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bool",
+						"name": "hasBrokeragePaid",
+						"type": "bool"
+					},
+					{
+						"internalType": "string",
+						"name": "paymentReference",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "brokerId",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "senderId",
+						"type": "address"
+					},
+					{
+						"internalType": "enum Brokerage.SettlementStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct Brokerage.BrokerageTrade",
+				"name": "trade",
+				"type": "tuple"
+			}
+		],
+		"name": "NewTradeSubmit",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"components": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "markitWireId",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "tradeDate",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "currency",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "settlementDate",
+								"type": "string"
+							},
+							{
+								"internalType": "bool",
+								"name": "clearingEligible",
+								"type": "bool"
+							},
+							{
+								"internalType": "string",
+								"name": "clientCode",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "brokerCode",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "brokerageAmount",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct Brokerage.Trade",
+						"name": "trade",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bool",
+						"name": "hasBrokeragePaid",
+						"type": "bool"
+					},
+					{
+						"internalType": "string",
+						"name": "paymentReference",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "brokerId",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "senderId",
+						"type": "address"
+					},
+					{
+						"internalType": "enum Brokerage.SettlementStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct Brokerage.BrokerageTrade",
+				"name": "trade",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "tradeId",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "updatedAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "comments",
+						"type": "string"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct Brokerage.BrokerageDispute",
+				"name": "dispute",
+				"type": "tuple"
+			}
+		],
+		"name": "DisputeOccured",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"components": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "markitWireId",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "tradeDate",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "currency",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "settlementDate",
+								"type": "string"
+							},
+							{
+								"internalType": "bool",
+								"name": "clearingEligible",
+								"type": "bool"
+							},
+							{
+								"internalType": "string",
+								"name": "clientCode",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "brokerCode",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "brokerageAmount",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct Brokerage.Trade",
+						"name": "trade",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bool",
+						"name": "hasBrokeragePaid",
+						"type": "bool"
+					},
+					{
+						"internalType": "string",
+						"name": "paymentReference",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "brokerId",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "senderId",
+						"type": "address"
+					},
+					{
+						"internalType": "enum Brokerage.SettlementStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct Brokerage.BrokerageTrade",
+				"name": "trade",
+				"type": "tuple"
+			}
+		],
+		"name": "BrokerageSettled",
+		"type": "event"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "brokerAddressMapping",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "accountId",
+				"type": "address"
+			},
+			{
+				"internalType": "enum Brokerage.UserType",
+				"name": "userType",
+				"type": "uint8"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "code",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "isEnabled",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getBrokerTrades",
+		"outputs": [
+			{
+				"components": [
+					{
+						"components": [
+							{
+								"internalType": "string",
+								"name": "markitWireId",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "tradeDate",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "currency",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "settlementDate",
+								"type": "string"
+							},
+							{
+								"internalType": "bool",
+								"name": "clearingEligible",
+								"type": "bool"
+							},
+							{
+								"internalType": "string",
+								"name": "clientCode",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "brokerCode",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "brokerageAmount",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct Brokerage.Trade",
+						"name": "trade",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bool",
+						"name": "hasBrokeragePaid",
+						"type": "bool"
+					},
+					{
+						"internalType": "string",
+						"name": "paymentReference",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "brokerId",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "senderId",
+						"type": "address"
+					},
+					{
+						"internalType": "enum Brokerage.SettlementStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct Brokerage.BrokerageTrade[]",
+				"name": "_brokerageTrades",
+				"type": "tuple[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "getUserRole",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "_role",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "isBroker",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "isClient",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+
+ $(document).ready(function() {
+         $('.datepicker').datepicker({
+    		format: 'mm/dd/yyyy',
+    		startDate: '-3d'
+		});
+	loadweb3();
+	loadBlockchainData()
+	$("#broker").hide();
+	$("#client").hide();
+	$("#client").hide();
+	$("#accord").hide();
+        });
+
+
+async function loadweb3()
+{
+if (window.ethereum) {
+        window.web3 = new Web3(ethereum);
+        await ethereum.enable();
+        console.log("Modern Ethereum browser detected");
+        
+    }
+   
+ else if (window.web3) {
+        window.web3 = new Web3(window.web3.currentProvider);
+        console.log("Legacy Ethereum browser detected");
+    }
+   
+    else {
+        console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+	}
+}
+
+
+async function loadBlockchainData()
+{
+var web3 = window.web3;
+
+web3.eth.getAccounts(function (error, accounts) {
+  if (error) return console.error(error);
+  web3.eth.defaultAccount = accounts[0];
+  console.log(web3.eth.defaultAccount);
+deployedContract=new web3.eth.Contract(abi,contractAddress);
+var isClient;
+deployedContract.methods.isClient().call({from: web3.eth.defaultAccount}).then((res) => {
+
+isClient=res;
+
+});
+
+
+deployedContract.methods.brokerAddressMapping(web3.eth.defaultAccount).call({from: web3.eth.defaultAccount}).then((res) => {
+
+var brokerCode=res.code;
+
+deployedContract.events.NewTradeSubmit({},{fromBlock:0,toBlock:'latest'}, function(error, event){ console.log(event); })
+.on('data', function(event){
+ if(event.returnValues.trade.trade.brokerCode==brokerCode||isClient)
+{
+    var newRowContent="<tr><th scope='row'>1</th><td>"+event.returnValues.trade.trade.brokerCode+"</td><td>"+event.returnValues.trade.trade.clientCode+"</td><td>"+event.returnValues.trade.trade.brokerageAmount+"</td></tr>";
+	$("#notificationTable tbody").append(newRowContent);
+}
+});
+
+
+});
+
+
+
+});
+
+
+
+
+
+}
+
+
+
+function RegisterBroker()
+{
+var brokerCode= $("#txtBrokerCode").val();
+var brokerName= $("#txtBrokerName").val();
+ deployedContract.methods.registerBroker(brokerCode,brokerName).send({from:  web3.eth.defaultAccount, gas:3000000}).then((f) => {
+ //alert("Broker has been Registered");
+deployedContract.events.NewBroker({},{fromBlock:0,toBlock:'latest'}, function(error, event){ console.log(event); })
+.on('data', function(event){
+    alert("Broker Registerd on address "+event.returnValues.broker);
+
+});
+ });
+
+
+
+}
+
+function RegisterClient()
+{
+var clientCode= $("#txtClientCode").val();
+var clientName= $("#txtClientName").val();
+ deployedContract.methods.registerClient(clientCode,clientName).send({from:  web3.eth.defaultAccount, gas:3000000}).then((f) => {
+ deployedContract.events.NewClient({},{fromBlock:0,toBlock:'latest'}, function(error, event){ console.log(event); })
+.on('data', function(event){
+    alert("Client Registerd on address "+event.returnValues.client); 
+});
+ });
+
+}
+function SubmitTrade()
+{
+var clientCode= $("#txtClientCode2").val();
+var brokerCode= $("#txtBrokerCode2").val();
+var unit= $("#txtUnit").val();
+//var isClearingEligble= $("#txtIsClearingEligble").val();
+var isClearingEligble=($('#txtIsClearingEligble').prop('checked'));
+
+var settlementDate=$("#txtSettlementDate").val();
+var tradeDate=$("#txtTradeDate").val();
+var currency=$("#txtCurrency").val();
+var markitWireId=$("#txtMarkitWireId").val();
+
+deployedContract.methods.submitTrade(markitWireId,tradeDate,currency,settlementDate,isClearingEligble,clientCode,brokerCode,unit).send({from: 	 web3.eth.defaultAccount, gas:3000000}).then((f) => {
+ deployedContract.events.NewTradeSubmit({},{fromBlock:0,toBlock:'latest'}, function(error, event){ console.log(event); })
+.on('data', function(event){
+	var newRowContent='<tr><td>"+event.returnValues.trade.trade.brokerCode+"</td>"+event.returnValues.trade.trade.clientCode	+"<td>"+event.returnValues.trade.trade.brokerageAmount+"</td></tr>'
+	$("#notificaitonTable tbody").append(newRowContent);
+ 
+});
+$("#txtClientCode2").val('');
+$("#txtBrokerCode2").val('');
+($('#txtIsClearingEligble').prop('checked',false));
+
+$("#txtUnit").val('');
+$("#txtSettlementDate").val('');
+$("#txtTradeDate").val('');
+$("#txtCurrency").val('');
+$("#txtMarkitWireId").val('');
+
+ });
+
+}
+
+function GetBrokerTrades()
+{
+deployedContract.methods.getBrokerTrades().call({from: web3.eth.defaultAccount}).then((res) => {
+$("#txtClientCode2").val(res[0].trade.clientCode);
+$("#txtBrokerCode2").val(res[0].trade.brokerCode);
+($('#txtIsClearingEligble').prop('checked',res[0].trade.settlementDate)) 
+$("#txtTradeDate").val(res[0].trade.tradeDate);
+$("#txtSettlementDate").val(res[0].trade.settlementDate);
+$("#txtCurrency").val(res[0].trade.currency);
+$("#txtMarkitWireId").val(res[0].trade.markitWireId);
+ });
+
+}
+function EnableBroker()
+{
+$("#accord").show();
+$("#broker").show();
+$("#client").hide();
+$("#trade").hide();
+}
+
+function EnableClient()
+{
+$("#accord").show();
+$("#client").show();
+$("#trade").show();
+$("#broker").hide();
+}
+</script>
+
+</head>
+<body>
+
+
+<div class="container">
+<section class="jumbotron text-center">
+<h1 class="jumbotron-heading">BROKERAGE</h1>
+</section>
+<br/>
+<div class="row">
+<div class="col-md-4"></div>
+<div class="col-md-2">
+ <button onClick="EnableBroker()" class="btn btn-primary">RegisterAsBroker</button>
+</div>
+<div class="col-md-2">
+ <button onClick="EnableClient()" class="btn btn-primary">RegisterAsClient</button>
+</div>
+<div class="col-md-4"></div>
+</div>
+<br/>
+<div class="accordion" style="display:none" id="accord">
+  <div id="broker" class="card">
+    <div class="card-header" id="headingOne">
+      <h2 class="mb-0">
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          Register Broker
+        </button>
+      </h2>
+    </div>
+
+    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accord">
+      <div class="card-body">
+     <div class="form-group">
+    	<label for="txtBrokerCode">Broker Code</label>
+    	<input class="form-control" id="txtBrokerCode" placeholder="Broker Code">
+      	</div>
+  	<div class="form-group">
+    	<label for="txtBrokerName">Broker Name</label>
+    	<input class="form-control" id="txtBrokerName" placeholder="Broker Name">
+ 	</div>
+	<button onClick="RegisterBroker()" class="btn btn-primary">Register Broker</button>
+      </div>
+    </div>
+  </div>
+  <div id="client" class="card">
+    <div class="card-header" id="headingTwo">
+      <h2 class="mb-0">
+        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-		controls="collapseTwo">
+          Register Client
+        </button>
+      </h2>
+    </div>
+    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accord">
+      <div class="card-body">
+       <div class="form-group">
+    <label for="txtClientCode">Client Code</label>
+    <input class="form-control" id="txtClientCode" placeholder="Client Code">
+ </div>
+  <div class="form-group">
+    <label for="txtClientName">Client Name</label>
+    <input class="form-control" id="txtClientName" placeholder="Client Name">
+ </div>
+ <button onClick="RegisterClient()" class="btn btn-primary">Register Client</button>
+      </div>
+    </div>
+  </div>
+  <div id="trade" class="card">
+    <div class="card-header" id="headingThree">
+      <h2 class="mb-0">
+        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-	controls="collapseThree">
+          Trade
+        </button>
+      </h2>
+    </div>
+    <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accord">
+      <div class="card-body">
+       <div class="form-group">
+    <label for="txtMarkitWireId">Markit Wire Id</label>
+    <input class="form-control" id="txtMarkitWireId" placeholder="Markit Wire Id">
+ </div>
+  <div class="form-group">
+    <label for="txtTradeDate">Trade Date</label>
+    <input class="datepicker form-control"  data-date-format="mm/dd/yyyy"  id="txtTradeDate" placeholder="Trade Date">
+ </div>
+ <div class="form-group">
+    <label for="txtCurrency">Currency</label>
+    <input class="form-control" id="txtCurrency" placeholder="Currency">
+ </div>
+ <div class="form-group">
+    <label for="txtSettlementDate">Settlement Date</label>
+    <input class="form-control datepicker" data-date-format="mm/dd/yyyy" id="txtSettlementDate" placeholder="Settlement Date">
+ </div>
+
+
+ <div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="txtIsClearingEligble">
+    <label class="form-check-label" for="txtIsClearingEligble">Is Clearing Eligble</label>
+  </div>
+<div class="form-group">
+    <label for="txtClientCode2">Client Code</label>
+    <input class="form-control" id="txtClientCode2" placeholder="Client Code">
+ </div>
+<div class="form-group">
+    <label for="txtBrokerCode2">Broker Code</label>
+    <input class="form-control" id="txtBrokerCode2" placeholder="Broker Code">
+ </div>
+<div class="form-group">
+    <label for="txtUnit">Broker Unit</label>
+    <input class="form-control" id="txtUnit" placeholder="Brokerage Unit">
+ </div>
+ <button onClick="SubmitTrade()" class="btn btn-primary">Submit Trade</button>
+ <button onClick="GetBrokerTrades()" class="btn btn-primary">Get Broker Trades</button>
+
+      </div>
+    </div>
+  </div>
+  <div id="notification" class="card">
+    <div class="card-header" id="headingTwo">
+      <h2 class="mb-0">
+        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collaplseNotication" aria-expanded="false" aria-		controls="collaplseNotication">
+         Notification
+        </button>
+      </h2>
+    </div>
+    <div id="collaplseNotication" class="collapse" aria-labelledby="headingTwo" data-parent="#accord">
+      <div class="card-body">
+		<table id="notificationTable" class="table table-dark">
+			<thead>
+			  <tr>
+				<th scope="col">#</th>
+				<th scope="col">Broker Code</th>
+				<th scope="col">Client Code</th>
+				<th scope="col">Brokerage</th>
+			  </tr>
+			</thead>
+			<tbody id="notificationBody">
+			 			  
+			</tbody>
+		  </table>
+     
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
