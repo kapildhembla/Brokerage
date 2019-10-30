@@ -34,6 +34,8 @@ contract Brokerage {
         address brokerId;
         address senderId;
         SettlementStatus status;
+        uint conversionRate;
+        uint ethersAmount;
     }
     
     struct BrokerageDispute {
@@ -55,12 +57,12 @@ contract Brokerage {
     
     mapping(string => User) brokerMapping; 
     mapping(address => User) brokerAddressMapping;
-    mapping(address => User) customerMapping;
+    mapping(address => User) clientMapping;
     mapping(string => BrokerageTrade) tradesToSettle;
     //mapping (address => Trade[]) brokerTrades;
     mapping (address => mapping(string => BrokerageTrade)) brokerageTrades1;
     mapping (address => BrokerageTrade[]) brokerageTrades;
-    
+    mapping (address => BrokerageTrade[]) clientTrades;
     mapping(string => BrokerageDispute[]) disputes;
     
     
@@ -87,7 +89,7 @@ contract Brokerage {
      * @return true if `msg.sender` is client.
      */
     function isClient() public view returns (bool) {
-        User memory client = customerMapping[msg.sender];
+        User memory client = clientMapping[msg.sender];
         return client.isEnabled;
     }
     
@@ -116,16 +118,19 @@ contract Brokerage {
      function registerClient(string memory _clientCode, string memory _clientName) public {
         require (!isClient(), "Client already registered");
         User memory client = User(msg.sender, UserType.Client,_clientName, _clientCode, true);
-        customerMapping[msg.sender] = client;
+        clientMapping[msg.sender] = client;
         emit NewClient(msg.sender);
     }
     
-    function submitTrade(string memory _markitWireId, string memory _tradeDate, string memory _currency, string memory _settlementDate, bool  _isClearingEligible, string memory _clientCode,string memory _brokerCode, uint _brokerage) public onlyClient{
+    function submitTrade(string memory _markitWireId, string memory _tradeDate, string memory _currency, string memory _settlementDate, 
+            bool  _isClearingEligible, string memory _clientCode,string memory _brokerCode, uint _brokerage, uint _conversionRate, uint _etherAmount) public onlyClient{
         require(brokerMapping[_brokerCode].isEnabled,"Unknown broker");
         Trade memory trade = Trade(_markitWireId, _tradeDate, _currency, _settlementDate, _isClearingEligible, _clientCode, _brokerCode, _brokerage);
-        BrokerageTrade memory brokerageTrade = BrokerageTrade(trade, false, "",msg.sender, brokerMapping[_brokerCode].accountId, SettlementStatus.UnSettled);
+        BrokerageTrade memory brokerageTrade = BrokerageTrade(trade, false, "",msg.sender, brokerMapping[_brokerCode].accountId, SettlementStatus.UnSettled,
+                                 _conversionRate, _etherAmount);
         //brokerTrades[brokerMapping[_brokerCode].accountId].push(trade);
         brokerageTrades[brokerMapping[_brokerCode].accountId].push(brokerageTrade);
+        clientTrades[msg.sender].push(brokerageTrade);
         
         mapping (string => BrokerageTrade) storage mappings = brokerageTrades1[brokerMapping[_brokerCode].accountId];
         mappings[_markitWireId] = brokerageTrade;
@@ -137,13 +142,13 @@ contract Brokerage {
    
     
     function confirmBrokerageAmount (string memory _tradeId) public onlyBroker{
-        BrokerageTrade storage brokerageTrade = brokerageTrades1[msg.sender][_tradeId];
-        require(brokerageTrade.status == SettlementStatus.UnSettled, "Trade already settled.");
-        brokerageTrade.status = SettlementStatus.Settled;
+        //BrokerageTrade storage brokerageTrade = brokerageTrades1[msg.sender][_tradeId];
+        require(brokerageTrades1[msg.sender][_tradeId].status == SettlementStatus.UnSettled, "Trade already settled.");
+        brokerageTrades1[msg.sender][_tradeId].status = SettlementStatus.Settled;
         
         //emit event to customer that broker has settled trade
         
-        emit BrokerageSettled(brokerageTrade);
+        emit BrokerageSettled(brokerageTrades1[msg.sender][_tradeId]);
     }
     
     function disputeBrokerage(string memory _tradeId, uint _amount, string memory _comments ) public {
@@ -173,10 +178,28 @@ contract Brokerage {
         return _role;
     }
     
+    function getStatus(SettlementStatus stausLocal) view public returns (string memory _status) {
+        if(SettlementStatus.UnSettled == stausLocal)
+            _status = "UnSettled";
+        else if(SettlementStatus.Settled == stausLocal)
+            _status = "Settled";
+        else
+            _status = "Disputed";
+            
+        return _status;
+    }
+    
      function getBrokerTrades() view public onlyBroker returns (BrokerageTrade[] memory _brokerageTrades) {
         require(brokerAddressMapping[msg.sender].isEnabled, "Not a valid broker");
         require(brokerageTrades[msg.sender].length > 0, "No trades available");
         
         _brokerageTrades = brokerageTrades[msg.sender];
+    }
+    
+     function getClientTrades() view public onlyClient returns (BrokerageTrade[] memory _brokerageTrades) {
+        require(clientMapping[msg.sender].isEnabled, "Not a valid Client");
+        //require(brokerageTrades[msg.sender].length > 0, "No trades available");
+        
+        _brokerageTrades = clientTrades[msg.sender];
     }
 }
