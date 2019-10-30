@@ -1,1 +1,48 @@
-
+{
+    "trades":[
+    {
+        "trade" : {
+            "markitWireId":"1234345454",
+            "tradeDate":"14-10-2019",
+            "currency": "USD",
+            "settlementDate" : "14-10-2021",
+            "brokerageAmount" : 100         
+        },
+        "status":"UnSettled",
+        "paymentReference":"Ref12343"
+    },
+    {
+        "trade" : {
+            "markitWireId":"32343434",
+            "tradeDate":"14-10-2019",
+            "currency": "GBP",
+            "settlementDate" : "14-10-2021",
+            "brokerageAmount" : 343       
+        },
+        "status":"UnSettled",
+        "paymentReference":"Ref2343"
+    },
+    {
+        "trade" : {
+            "markitWireId":"443256",
+            "tradeDate":"14-10-2019",
+            "currency": "USD",
+            "settlementDate" : "14-10-2021",
+            "brokerageAmount" : 12200         
+        },
+        "status":"UnSettled",
+        "paymentReference":"Ref443256"
+    },
+    {
+        "trade" : {
+            "markitWireId":"8866555",
+            "tradeDate":"14-10-2019",
+            "currency": "USD",
+            "settlementDate" : "14-10-2021",
+            "brokerageAmount" : 16600         
+        },
+        "status":"UnSettled",
+        "paymentReference":"Ref8866555"
+    }
+]
+}
