@@ -221,4 +221,9 @@ contract Brokerage {
         bTrade= mappings[_markitWireId];
        
     }
+ function TransferMoney(address payable _addr) payable public {
+        //require(msg.value >= msg.sender.balance);
+        if (msg.value > msg.sender.balance) {revert();}
+         _addr.transfer(msg.value);
+    }
 }
