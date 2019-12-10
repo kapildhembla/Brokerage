@@ -59,7 +59,7 @@ contract Brokerage {
     mapping(string => BrokerageTrade) tradesToSettle;
     //mapping (address => Trade[]) brokerTrades;
     mapping (address => mapping(string => BrokerageTrade)) brokerageTrades1;
-    mapping (address => BrokerageTrade[]) brokerageTrades;
+    mapping (address => BrokerageTrade[]) public brokerageTrades;
     
     mapping(string => BrokerageDispute[]) disputes;
     
@@ -123,7 +123,7 @@ contract Brokerage {
     function submitTrade(string memory _markitWireId, string memory _tradeDate, string memory _currency, string memory _settlementDate, bool  _isClearingEligible, string memory _clientCode,string memory _brokerCode, uint _brokerage) public onlyClient{
         require(brokerMapping[_brokerCode].isEnabled,"Unknown broker");
         Trade memory trade = Trade(_markitWireId, _tradeDate, _currency, _settlementDate, _isClearingEligible, _clientCode, _brokerCode, _brokerage);
-        BrokerageTrade memory brokerageTrade = BrokerageTrade(trade, false, "",msg.sender, brokerMapping[_brokerCode].accountId, SettlementStatus.UnSettled);
+        BrokerageTrade memory brokerageTrade = BrokerageTrade(trade, false, "", brokerMapping[_brokerCode].accountId,msg.sender, SettlementStatus.UnSettled);
         //brokerTrades[brokerMapping[_brokerCode].accountId].push(trade);
         brokerageTrades[brokerMapping[_brokerCode].accountId].push(brokerageTrade);
         
@@ -140,10 +140,45 @@ contract Brokerage {
         BrokerageTrade storage brokerageTrade = brokerageTrades1[msg.sender][_tradeId];
         require(brokerageTrade.status == SettlementStatus.UnSettled, "Trade already settled.");
         brokerageTrade.status = SettlementStatus.Settled;
+        BrokerageTrade[]storage tradeArray= brokerageTrades[msg.sender]; 
         
+        for (uint i=0; i<tradeArray.length; i++) 
+        {
+            if(keccak256(abi.encodePacked((tradeArray[i].trade.markitWireId))) == keccak256(abi.encodePacked((_tradeId))))
+            {
+            
+                tradeArray[i].status=SettlementStatus.Settled;
+                
+            }
+        }
         //emit event to customer that broker has settled trade
         
         emit BrokerageSettled(brokerageTrade);
+    }
+    
+      function disputeBrokerage2 (string memory _tradeId, uint _amount, string memory _comments) public onlyBroker{
+        //BrokerageTrade storage brokerageTrade = brokerageTrades1[msg.sender][_tradeId];
+        require(brokerageTrades1[msg.sender][_tradeId].status == SettlementStatus.UnSettled, "Trade already settled.");
+        
+         if(brokerageTrades1[msg.sender][_tradeId].status != SettlementStatus.Disputed)
+         {
+            brokerageTrades1[msg.sender][_tradeId].status = SettlementStatus.Disputed;
+            BrokerageTrade[]storage tradeArray= brokerageTrades[msg.sender]; 
+        
+            for (uint i=0; i<tradeArray.length; i++) 
+            {
+                if(keccak256(abi.encodePacked((tradeArray[i].trade.markitWireId))) == keccak256(abi.encodePacked((_tradeId))))
+                {
+                tradeArray[i].status=SettlementStatus.Disputed;
+                }
+            }
+            BrokerageDispute memory brokerageDispute = BrokerageDispute(_tradeId, _amount, _comments);
+            disputes[_tradeId].push(brokerageDispute);
+             //emit event to customer that broker has settled trade
+            emit DisputeOccured(brokerageTrades1[msg.sender][_tradeId],brokerageDispute);
+        }
+        
+       
     }
     
     function disputeBrokerage(string memory _tradeId, uint _amount, string memory _comments ) public {
@@ -178,5 +213,12 @@ contract Brokerage {
         require(brokerageTrades[msg.sender].length > 0, "No trades available");
         
         _brokerageTrades = brokerageTrades[msg.sender];
+    }
+    function getBrokerTradeByMarketWireId(string memory _markitWireId) view public onlyBroker returns (BrokerageTrade memory bTrade) {
+        require(brokerAddressMapping[msg.sender].isEnabled, "Not a valid broker");
+        require(brokerageTrades[msg.sender].length > 0, "No trades available");
+         mapping (string => BrokerageTrade) storage mappings = brokerageTrades1[msg.sender];
+        bTrade= mappings[_markitWireId];
+       
     }
 }
